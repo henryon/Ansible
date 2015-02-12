@@ -1,0 +1,28 @@
+---
+- hosts: server-ip
+  # you can build with this script with group which defined under /etc/ansible/hosts
+  #accelerate: true
+  remote_user: root
+  gather_facts: no
+  roles:
+    #- common
+    #- web-resin
+    - gm-identify
+     
+  tasks:
+      - name: ensure  gluster client is installed
+        #yum: pkg=glusterfs state=latest
+        command: echo {{ item }}
+        with_items:
+          - tas
+          - good
+      - lineinfile: "dest='/etc/profile'  line='LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/ffmpeg/lib' state=present"
+        tags:
+          add_ffmpeg_lib
+      - lineinfile: "dest='/etc/profile'  line='export LD_LIBRARY_PATH' state=present"
+        tags:
+          add_ffmpeg_lib
+      - name: test_ffmpeg_soft_link
+        shell: test  -L /usr/bin/ffmpeg || ln -s /usr/local/ffmpeg/bin/ffmpeg /usr/bin/ffmpeg
+        tags:
+          add_ffmpeg_softlink
