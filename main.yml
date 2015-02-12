@@ -1,0 +1,51 @@
+---
+- shell: test -d /usr/local/include || mkdir -p /usr/local/include
+- shell: test -d  /usr/local/man/man1 || mkdir -p  /usr/local/man/man1
+  ignore_errors: True
+- name: test_source_dir
+  shell: test -d /opt/sources
+  register: dir_result
+  ignore_errors: True
+
+- shell: mkdir -p /opt/sources
+  when: dir_result.rc == 1
+
+- synchronize: src=/etc/ansible/pkgs/gm-identify/  dest=/opt/sources/.
+- name: install_gm_identify
+  shell: 'cd /opt/sources ; ldconfig;{{ item }}'
+  with_items:
+    - make
+- lineinfile: dest='/etc/ld.so.conf' state=present line="{{item}}"
+  with_items:
+     - /usr/local/lib
+     - /usr/local/ffmpeg/lib
+  tags:
+    install_ffmpeg
+- name: remove_old_dir
+  shell: rm -rf /opt/sources/audio
+  ignore_errors: True
+  tags:
+    install_ffmpeg
+
+- synchronize: src=/etc/ansible/pkgs/audio  dest=/opt/sources/.
+  tags:
+    install_ffmpeg
+- name: install_audio
+  shell: 'cd /opt/sources/audio;{{item}}'
+  with_items:
+    - make
+  tags:
+    install_ffmpeg
+
+- lineinfile: dest='/etc/profile' state=present line="export PATH=$PATH:/usr/local/ffmpeg/bin"
+  tags:
+    install_ffmpeg
+
+#- lineinfile: dest='/etc/ld.so.conf' state=present line="{{item}}"
+#  with_items:
+#     - /usr/local/lib
+#     - /usr/local/ffmpeg/lib
+#- lineinfile: dest='/etc/profile' state=present line="{{item}}"
+#  with_items:
+#     - LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/ffmpeg/lib:/usr/local/lib
+#     - export LD_LIBRARY_PATH
