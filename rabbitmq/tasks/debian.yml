@@ -1,0 +1,30 @@
+---
+- name: Apt update 
+  shell: 'apt-get -y update && apt-get -y -f install'
+  ignore_errors: True
+
+- name: "Build hosts file"
+  lineinfile:  dest=/etc/hosts
+               line="{{ hostvars[item]['ansible_eth0']['ipv4']['address'] }}       {{ hostvars[item]['ansible_hostname'] }}"
+               state=present
+  with_items: groups['tag_role_rabbit']
+
+
+
+- name: Disable ufw process
+  shell: sudo ufw disable
+
+- name: Create source directory
+  shell: 'test -d /opt/source||mkdir -p /opt/source'
+
+- name: Download the rabbitmq-server pkg
+  shell: 'cd /opt/source ; test -f rabbitmq-server_3.2.4-1_all.deb || wget https://www.rabbitmq.com/releases/rabbitmq-server/v3.2.4/rabbitmq-server_3.2.4-1_all.deb'
+
+- name: Install rabbitmq-server
+  shell: 'cd /opt/source ; dpkg -i rabbitmq-server_3.2.4-1_all.deb'
+  #apt: name=rabbitmq-server=3.2.4-1 state=present
+  ignore_errors: True
+
+- name: Get rabbitmq-server pid to stop
+  shell: 'service rabbitmq-server stop'
+  ignore_errors: True

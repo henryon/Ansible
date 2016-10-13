@@ -1,0 +1,37 @@
+---
+
+# name: Push .erlang.cookie to each rabbit server
+- copy: src=.erlang.cookie dest=/var/lib/rabbitmq/  owner=rabbitmq group=rabbitmq  mode="u=r"
+
+- name: Create rabbitmq source directory
+  shell: test -d /opt/test/rabbitmq||mkdir -p /opt/test/rabbitmq
+
+# name: Push HA start script to rabbit01
+- copy: src={{item}} dest=/opt/test/rabbitmq
+  with_items:
+    - rabbit01-start.sh
+    - rabbitmq-ha.sh
+  when: my_role == "rabbit01" 
+
+# name: Push Rabbit01 start script to mqslave
+- copy: src=rabbit01-start.sh dest=/opt/test/rabbitmq/ 
+  when: my_role == "rabbit01" 
+
+
+# name: Push Other Rabbit start script 
+- copy: src=rabbit-start.sh dest=/opt/test/rabbitmq/ 
+  when: my_role !== "rabbit01" 
+
+
+- name: Start rabbit01  server process
+  shell: "sh -x /opt/test/rabbitmq/rabbit01-start.sh {{hostvars[groups['tag_role_rabbit'][0]]['ansible_hostname']}} &  "
+  when: my_role == "rabbit01" 
+  ignore_errors: True
+
+- name: Start other server rabbitmq process
+  shell: 'cd /opt/test/rabbitmq;sh -x rabbit-start.sh; echo $?'
+  when: my_role !== "rabbit01" 
+  
+- name: Setting HA on rabbit01
+  shell: 'bash -x /opt/test/rabbitmq/rabbitmq-ha.sh'
+  when: my_role == "rabbit01" 

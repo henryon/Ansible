@@ -1,0 +1,4 @@
+---
+fuseurl: https://github.com/libfuse/libfuse/releases/download/fuse_2_9_5/fuse-2.9.5.tar.gz
+fusepkg: fuse-2.9.5.tar.gz
+fusedir: fuse-2.9.5
